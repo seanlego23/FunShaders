@@ -10,9 +10,11 @@ uniform float zoom;
 
 out vec4 FragColor;
 
+vec3 black = vec3(0.0);
+
 vec4 getColor(float it) {
 	vec3 col = 0.5 + 0.5 * cos(3.0 + it * 0.15 + vec3(0.0, 0.6, 1.0));
-	return vec4(col, 1.0);
+	return vec4(it == 0 ? black : col, 1.0);
 }
 
 float mandelbrot(vec2 c) {
