@@ -179,7 +179,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
 	glm::vec2 trans = current_inputs->translation;
 
 	current_inputs->zoomSum += (float)yoffset;
-	current_inputs->zoom = glm::exp(0.02f * current_inputs->zoomSum);
+	current_inputs->zoom = glm::exp(0.05f * current_inputs->zoomSum);
 
 	glm::vec2 new_cursorPos = worldToScreen(pos);
 	current_inputs->translation += screenToWorldDir(new_cursorPos - current_inputs->cursorPos);
