@@ -2,15 +2,18 @@
 
 #include <glad/glad.h>
 
+#include "camera.h"
+
 class screen {
 
 	GLuint _vao;
 	GLuint _vbo;
-	int _width, _height;
 
 	float _time = 0.0f;
 
 public:
+
+	Camera camera;
 
 	screen();
 	~screen();

@@ -9,7 +9,7 @@ static GLfloat screen_coords[] = {
 	 1.0f,  1.0f, 0.0f,
 };
 
-screen::screen() {
+screen::screen() : camera{} {
 
 	glGenVertexArrays(1, &_vao);
 	glGenBuffers(1, &_vbo);
@@ -43,9 +43,6 @@ void screen::draw_screen(shader* s, const shader_inputs* si) {
 	GLuint prog = s->getProgram();
 
 	glUniform2f(glGetUniformLocation(prog, "resolution"), si->resolution.x, si->resolution.y);
-	glUniform2f(glGetUniformLocation(prog, "translation"), si->translation.x, si->translation.y);
-	glUniform2f(glGetUniformLocation(prog, "scale"), si->scale.x, si->scale.y);
-	glUniform2f(glGetUniformLocation(prog, "offset"), si->offset.x, si->offset.y);
 	glUniform1f(glGetUniformLocation(prog, "time"), _time);
 	glUniform1f(glGetUniformLocation(prog, "elapsedTime"), si->elapsedTime);
 	glUniform1f(glGetUniformLocation(prog, "zoom"), si->zoom);
