@@ -1,8 +1,8 @@
 #pragma once
 
-#include "object.h"
+#include "shader_object.h"
 
-class mandelbrot : public object {
+class mandelbrot : public shader_object {
 
 };
 
