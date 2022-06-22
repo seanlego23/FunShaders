@@ -1,6 +1,7 @@
 #pragma once
 
 #include <glad/glad.h>
+#include <glm/glm.hpp>
 
 #include "camera.h"
 
@@ -11,6 +12,8 @@ class screen {
 
 	float _time = 0.0f;
 
+	glm::vec2 _resolution;
+
 public:
 
 	Camera camera;
@@ -19,6 +22,10 @@ public:
 	~screen();
 
 	void resetTime();
+
+	glm::vec2 getResolution();
+
+	void setResolution(glm::vec2 res);
 
 	void draw_screen(const class shader_object* obj);
 };

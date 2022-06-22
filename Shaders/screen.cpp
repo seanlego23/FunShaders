@@ -36,6 +36,14 @@ void screen::resetTime() {
 	_time = 0.0f;
 }
 
+glm::vec2 screen::getResolution() {
+	return _resolution;
+}
+
+void screen::setResolution(glm::vec2 res) {
+	_resolution = res;
+}
+
 void screen::draw_screen(const shader_object* obj) {
 	_time += obj->inputs.elapsedTime;
 
@@ -43,6 +51,8 @@ void screen::draw_screen(const shader_object* obj) {
 
 	GLuint prog = obj->getProgram();
 	obj->inputs.send_uniforms(prog);
+
+	glUniform2fv(glGetUniformLocation(prog, "resolution"), 1, &_resolution.x);
 	glUniform1f(glGetUniformLocation(prog, "time"), _time);
 	glUniform3fv(glGetUniformLocation(prog, "camera.loc"), 1, &camera.loc.x);
 	glUniform1f(glGetUniformLocation(prog, "camera.fov"), camera.fov);

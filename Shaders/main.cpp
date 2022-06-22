@@ -23,8 +23,6 @@ constexpr auto ROTATE_BUTTON_MASK = 0x2;
 const unsigned int SCR_WIDTH = 1280;
 const unsigned int SCR_HEIGHT = 720;
 
-glm::vec2 resolution{SCR_WIDTH, SCR_HEIGHT};
-
 static shader_object* curobj;
 static screen* curscr;
 static int button_mask = 0;
@@ -78,7 +76,7 @@ int main(int argc, const char* argv[]) {
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	//Create window
-	GLFWwindow* window = glfwCreateWindow((int)resolution.x, (int)resolution.y, "Digital Notes", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Digital Notes", NULL, NULL);
 	if (window == NULL) {
 		std::cout << "Failed to create GLFW window\n";
 		glfwTerminate();
@@ -116,7 +114,6 @@ int main(int argc, const char* argv[]) {
 
 	mandelbrot mandel;
 
-	mandel.inputs.resolution = resolution;
 	mandel.inputs.zoom = 0.25f;
 	mandel.inputs.zoomRaw = glm::log(mandel.inputs.zoom);
 
@@ -141,9 +138,8 @@ int main(int argc, const char* argv[]) {
 		glClear(GL_DEPTH_BUFFER_BIT);
 
 		curobj->inputs.elapsedTime = (float)elapsedTime;
-		curobj->inputs.resolution = resolution;
 
-		scr.draw_screen(curobj);
+		curscr->draw_screen(curobj);
 
 		drawImGui();
 
@@ -160,24 +156,28 @@ int main(int argc, const char* argv[]) {
 }
 
 glm::vec2 screenToWorld(glm::vec2 coord) {
-	return (2.0f * coord - resolution) / (resolution.y * curobj->inputs.zoom) + glm::vec2(curscr->camera.loc);
+	glm::vec2 res = curscr->getResolution();
+	return (2.0f * coord - res) / (res.y * curobj->inputs.zoom) + glm::vec2(curscr->camera.loc);
 }
 
 glm::vec2 screenToWorldDir(glm::vec2 dir) {
-	return 2.0f * dir / (resolution.y * curobj->inputs.zoom);
+	glm::vec2 res = curscr->getResolution();
+	return 2.0f * dir / (res.y * curobj->inputs.zoom);
 }
 
 glm::vec2 worldToScreen(glm::vec2 coord) {
-	return ((coord - glm::vec2(curscr->camera.loc)) * (resolution.y * curobj->inputs.zoom) + resolution) / 2.0f;
+	glm::vec2 res = curscr->getResolution();
+	return ((coord - glm::vec2(curscr->camera.loc)) * (res.y * curobj->inputs.zoom) + res) / 2.0f;
 }
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 	glViewport(0, 0, width, height);
-	resolution = glm::vec2(width, height);
+	curscr->setResolution({width, height});
 }
 
 void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
-	glm::vec2 new_pos = glm::vec2((float)xpos, resolution.y - (float)ypos);
+	glm::vec2 res = curscr->getResolution();
+	glm::vec2 new_pos = glm::vec2((float)xpos, res.y - (float)ypos);
 
 	if (button_mask & PAN_BUTTON_MASK) {
 		glm::vec2 old_pos = curobj->inputs.cursorPos;
