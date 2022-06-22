@@ -1,5 +1,5 @@
 #include <glad/glad.h>
-#include <GLFW/glfw3.h>
+#include <glfw/glfw3.h>
 
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
@@ -10,18 +10,24 @@
 #include <filesystem>
 #include <iostream>
 
+#include "mandelbrot.h"
 #include "screen.h"
 #include "shader.h"
 #include "shader_inputs.h"
+#include "shader_object.h"
+
+constexpr auto PAN_BUTTON_MASK = 0x1;
+constexpr auto ROTATE_BUTTON_MASK = 0x2;
 
 // settings
 const unsigned int SCR_WIDTH = 1280;
 const unsigned int SCR_HEIGHT = 720;
-unsigned int scr_width = SCR_WIDTH;
-unsigned int scr_height = SCR_HEIGHT;
 
-static shader_inputs* current_inputs;
-static bool pan_button = false;
+glm::vec2 resolution{SCR_WIDTH, SCR_HEIGHT};
+
+static shader_object* curobj;
+static screen* curscr;
+static int button_mask = 0;
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void cursor_position_callback(GLFWwindow* window, double xpos, double ypos);
@@ -30,8 +36,9 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 
 void drawImGui() {
 
-	float zoom = current_inputs->zoom;
-	glm::vec2 trans = current_inputs->translation;
+	float zoom = curobj->inputs.zoom;
+	glm::vec3 loc = curscr->camera.loc;
+	float fov = curscr->camera.fov;
 
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
@@ -41,18 +48,26 @@ void drawImGui() {
 
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
-	bool changeZoom = ImGui::DragFloat("Zoom", &zoom, 1.0f, 1.0f, 50000.0f);
-	ImGui::DragFloat2("Translation", &trans.x, 0.01f, -2.0f, 2.0f);
+	bool changeZoom = ImGui::DragFloat("Zoom", &zoom, 0.25f, 1.0f, 10000.0f);
+	bool changeLoc = ImGui::DragFloat3("Location", &loc.x, 0.01f, -10.0f, 10.0f);
+	bool changeFOV = ImGui::DragFloat("FOV", &fov, 0.01f, 0.1f, 1.75f);
 
 	ImGui::End();
 	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-	if (changeZoom)
-		current_inputs->zoomSum = glm::log(zoom);
-	current_inputs->zoom = zoom;
-	current_inputs->translation = trans;
+	if (changeZoom) {
+		curobj->inputs.zoom = zoom;
+		curobj->inputs.zoomRaw = glm::log(zoom);
+	}
 
+	if (changeLoc) {
+		curscr->camera.loc = loc;
+	}
+
+	if (changeFOV) {
+		curscr->camera.fov = fov;
+	}
 }
 
 int main(int argc, const char* argv[]) {
@@ -63,7 +78,7 @@ int main(int argc, const char* argv[]) {
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	//Create window
-	GLFWwindow* window = glfwCreateWindow(scr_width, scr_height, "Digital Notes", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow((int)resolution.x, (int)resolution.y, "Digital Notes", NULL, NULL);
 	if (window == NULL) {
 		std::cout << "Failed to create GLFW window\n";
 		glfwTerminate();
@@ -99,19 +114,19 @@ int main(int argc, const char* argv[]) {
 	if (!shader::init_vert())
 		return -1;
 
-	shader mandelbrot("data/mandelbrot.glsl");
-	shader_inputs mandelInputs;
+	mandelbrot mandel;
 
-	mandelInputs.resolution = glm::vec2(scr_width, scr_height);
-	mandelInputs.translation = glm::vec2(0.0f);
-	mandelInputs.scale = glm::vec2(4.0f, 2.5f);
-	mandelInputs.offset = glm::vec2(-2.0f, -1.25f);
-	mandelInputs.zoom = 1.0f;
-	mandelInputs.zoomSum = 0.0f;
+	mandel.inputs.resolution = resolution;
+	mandel.inputs.zoom = 0.25f;
+	mandel.inputs.zoomRaw = glm::log(mandel.inputs.zoom);
 
-	current_inputs = &mandelInputs;
+	curobj = &mandel;
 
 	screen scr;
+	scr.camera.loc = glm::vec3(0.0f, 0.0f, 2.0f);
+	scr.camera.fov = 1.0;
+
+	curscr = &scr;
 
 	double time = std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
 	double elapsedTime = 0.0;
@@ -125,10 +140,10 @@ int main(int argc, const char* argv[]) {
 		glClear(GL_COLOR_BUFFER_BIT);
 		glClear(GL_DEPTH_BUFFER_BIT);
 
-		current_inputs->elapsedTime = (float)elapsedTime;
-		current_inputs->resolution = glm::vec2(scr_width, scr_height);
+		curobj->inputs.elapsedTime = (float)elapsedTime;
+		curobj->inputs.resolution = resolution;
 
-		scr.draw_screen(&mandelbrot, current_inputs);
+		scr.draw_screen(curobj);
 
 		drawImGui();
 
@@ -145,50 +160,57 @@ int main(int argc, const char* argv[]) {
 }
 
 glm::vec2 screenToWorld(glm::vec2 coord) {
-	return (coord / current_inputs->resolution * current_inputs->scale) /
-		current_inputs->zoom + current_inputs->offset + current_inputs->translation;
+	return (2.0f * coord - resolution) / (resolution.y * curobj->inputs.zoom) + glm::vec2(curscr->camera.loc);
 }
 
 glm::vec2 screenToWorldDir(glm::vec2 dir) {
-	return (dir / current_inputs->resolution * current_inputs->scale) / current_inputs->zoom;
+	return 2.0f * dir / (resolution.y * curobj->inputs.zoom);
 }
 
 glm::vec2 worldToScreen(glm::vec2 coord) {
-	return ((coord - current_inputs->translation - current_inputs->offset) * current_inputs->zoom) /
-		current_inputs->scale * current_inputs->resolution;
+	return ((coord - glm::vec2(curscr->camera.loc)) * (resolution.y * curobj->inputs.zoom) + resolution) / 2.0f;
 }
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
-	glViewport(0, 0, scr_width = width, scr_height = height);
+	glViewport(0, 0, width, height);
+	resolution = glm::vec2(width, height);
 }
 
 void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
-	glm::vec2 new_pos = glm::vec2((float)xpos, scr_height - (float)ypos);
+	glm::vec2 new_pos = glm::vec2((float)xpos, resolution.y - (float)ypos);
 
-	if (pan_button) {
-		glm::vec2 old_pos = current_inputs->cursorPos;
-		current_inputs->translation -= screenToWorldDir(new_pos - old_pos);
+	if (button_mask & PAN_BUTTON_MASK) {
+		glm::vec2 old_pos = curobj->inputs.cursorPos;
+		curscr->camera.loc -= glm::vec3(screenToWorldDir(new_pos - old_pos), 0.0f);
 	}
 
 	//Flip the y because rendering is done from lower left and cursor is from upper left
-	current_inputs->cursorPos = new_pos;
+	curobj->inputs.cursorPos = new_pos;
 }
 
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
-	glm::vec2 pos = screenToWorld(current_inputs->cursorPos);
-	glm::vec2 trans = current_inputs->translation;
+	glm::vec2 pos = screenToWorld(curobj->inputs.cursorPos);
 
-	current_inputs->zoomSum += (float)yoffset;
-	current_inputs->zoom = glm::exp(0.05f * current_inputs->zoomSum);
+	curobj->inputs.zoomRaw += (float)yoffset;
+	curobj->inputs.zoom = glm::exp(0.05f * curobj->inputs.zoomRaw);
 
 	glm::vec2 new_cursorPos = worldToScreen(pos);
-	current_inputs->translation += screenToWorldDir(new_cursorPos - current_inputs->cursorPos);
+	curscr->camera.loc += glm::vec3(screenToWorldDir(new_cursorPos - curobj->inputs.cursorPos), 0.0f);
 }
 
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
 
+
 	if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
-		pan_button = action == GLFW_PRESS;
+		if (action == GLFW_PRESS)
+			button_mask = !button_mask ? PAN_BUTTON_MASK : button_mask;
+		else 
+			button_mask = button_mask & PAN_BUTTON_MASK ? 0 : button_mask;
+	} else if (button == GLFW_MOUSE_BUTTON_RIGHT) {
+		if (action == GLFW_PRESS)
+			button_mask = !button_mask ? ROTATE_BUTTON_MASK : button_mask;
+		else
+			button_mask = button_mask & ROTATE_BUTTON_MASK ? 0 : button_mask;
 	}
  
 }
