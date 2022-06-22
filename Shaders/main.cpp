@@ -177,25 +177,26 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 
 void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
 	glm::vec2 res = curscr->getResolution();
+	//Flip the y because rendering is done from lower left and cursor is from upper left
 	glm::vec2 new_pos = glm::vec2((float)xpos, res.y - (float)ypos);
 
 	if (button_mask & PAN_BUTTON_MASK) {
-		glm::vec2 old_pos = curobj->inputs.cursorPos;
+		glm::vec2 old_pos = curscr->getCursorPos();
 		curscr->camera.loc -= glm::vec3(screenToWorldDir(new_pos - old_pos), 0.0f);
 	}
 
-	//Flip the y because rendering is done from lower left and cursor is from upper left
-	curobj->inputs.cursorPos = new_pos;
+	curscr->setCursorPos(new_pos);
 }
 
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
-	glm::vec2 pos = screenToWorld(curobj->inputs.cursorPos);
+	glm::vec2 curpos = curscr->getCursorPos();
+	glm::vec2 pos = screenToWorld(curpos);
 
 	curobj->inputs.zoomRaw += (float)yoffset;
 	curobj->inputs.zoom = glm::exp(0.05f * curobj->inputs.zoomRaw);
 
 	glm::vec2 new_cursorPos = worldToScreen(pos);
-	curscr->camera.loc += glm::vec3(screenToWorldDir(new_cursorPos - curobj->inputs.cursorPos), 0.0f);
+	curscr->camera.loc += glm::vec3(screenToWorldDir(new_cursorPos - curpos), 0.0f);
 }
 
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {

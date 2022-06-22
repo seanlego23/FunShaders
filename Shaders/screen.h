@@ -13,6 +13,7 @@ class screen {
 	float _time = 0.0f;
 
 	glm::vec2 _resolution;
+	glm::vec2 _cursorPos;
 
 public:
 
@@ -23,10 +24,14 @@ public:
 
 	void resetTime();
 
-	glm::vec2 getResolution();
+	glm::vec2 getResolution() const;
 
 	void setResolution(glm::vec2 res);
 
-	void draw_screen(const class shader_object* obj);
+	glm::vec2 getCursorPos() const;
+
+	void setCursorPos(glm::vec2 curpos);
+
+	void draw_screen(const class shader_object* obj) const;
 };
 

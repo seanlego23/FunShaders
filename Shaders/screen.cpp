@@ -36,7 +36,7 @@ void screen::resetTime() {
 	_time = 0.0f;
 }
 
-glm::vec2 screen::getResolution() {
+glm::vec2 screen::getResolution() const {
 	return _resolution;
 }
 
@@ -44,7 +44,15 @@ void screen::setResolution(glm::vec2 res) {
 	_resolution = res;
 }
 
-void screen::draw_screen(const shader_object* obj) {
+glm::vec2 screen::getCursorPos() const {
+	return _cursorPos;
+}
+
+void screen::setCursorPos(glm::vec2 curpos) {
+	_cursorPos = curpos;
+}
+
+void screen::draw_screen(const shader_object* obj) const {
 	_time += obj->inputs.elapsedTime;
 
 	obj->use();
@@ -53,10 +61,11 @@ void screen::draw_screen(const shader_object* obj) {
 	obj->inputs.send_uniforms(prog);
 
 	glUniform2fv(glGetUniformLocation(prog, "resolution"), 1, &_resolution.x);
-	glUniform1f(glGetUniformLocation(prog, "time"), _time);
+	glUniform2fv(glGetUniformLocation(prog, "cursorPos"), 1, &_cursorPos.x);
 	glUniform3fv(glGetUniformLocation(prog, "camera.loc"), 1, &camera.loc.x);
 	glUniform3fv(glGetUniformLocation(prog, "camera.lookAt"), 1, &camera.lookAt.x);
 	glUniform1f(glGetUniformLocation(prog, "camera.fov"), camera.fov);
+	glUniform1f(glGetUniformLocation(prog, "time"), _time);
 
 	glBindVertexArray(_vao);
 
