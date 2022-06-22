@@ -1,12 +1,18 @@
 #version 460
 
+struct Camera {
+	vec3 loc;
+	vec3 lookAt;
+	float fov; //1.0 == 90 degrees
+};
+
 uniform vec2 resolution;
-uniform vec2 translation;
-uniform vec2 scale;
-uniform vec2 offset;
 uniform float time;
 uniform float elapsedTime;
 uniform float zoom;
+uniform float zoomRaw;
+
+uniform Camera camera;
 
 out vec4 FragColor;
 
@@ -35,8 +41,7 @@ float mandelbrot(vec2 c) {
 }
 
 void main() {
-	vec2 loc = gl_FragCoord.xy / resolution * scale;
-	loc = loc / zoom + offset + translation;
+	vec2 loc = (2.0 * gl_FragCoord.xy - resolution) / (resolution.y * zoom) + camera.loc.xy;
 	
 	float halfX = 0.5 / (resolution.x * zoom);
 	float halfY = 0.5 / (resolution.y * zoom);
