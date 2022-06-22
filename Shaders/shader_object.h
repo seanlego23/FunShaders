@@ -13,15 +13,7 @@ public:
 
 	shader_inputs inputs;
 
-	virtual ~shader_object() = default;
-
-	void move_cursor(double x, double y);
-
-	void pan(class screen* scr, double x, double y);
-
-	void zoom(class screen* scr, double x, double y);
-
-	void rotate(class screen* scr, double x, double y);
+	~shader_object() override = default;
 
 	virtual void mouse_button(int button, int action, int mods);
 
