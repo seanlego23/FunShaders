@@ -55,6 +55,7 @@ void screen::draw_screen(const shader_object* obj) {
 	glUniform2fv(glGetUniformLocation(prog, "resolution"), 1, &_resolution.x);
 	glUniform1f(glGetUniformLocation(prog, "time"), _time);
 	glUniform3fv(glGetUniformLocation(prog, "camera.loc"), 1, &camera.loc.x);
+	glUniform3fv(glGetUniformLocation(prog, "camera.lookAt"), 1, &camera.lookAt.x);
 	glUniform1f(glGetUniformLocation(prog, "camera.fov"), camera.fov);
 
 	glBindVertexArray(_vao);
