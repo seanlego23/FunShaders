@@ -1,5 +1,7 @@
 #pragma once
 
+#include "glad/glad.h"
+
 #include <string>
 
 class shader {
@@ -17,7 +19,7 @@ public:
 	static bool init_vert();
 	static void destroy_vert();
 
-	~shader();
+	virtual ~shader();
 
 	void use() const;
 
