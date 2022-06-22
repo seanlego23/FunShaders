@@ -52,7 +52,7 @@ void screen::setCursorPos(glm::vec2 curpos) {
 	_cursorPos = curpos;
 }
 
-void screen::draw_screen(const shader_object* obj) const {
+void screen::draw_screen(const shader_object* obj) {
 	_time += obj->inputs.elapsedTime;
 
 	obj->use();
