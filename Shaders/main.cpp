@@ -114,12 +114,13 @@ int main(int argc, const char* argv[]) {
 
 	mandelbrot mandel;
 
-	mandel.inputs.zoom = 0.25f;
+	mandel.inputs.zoom = 0.8f;
 	mandel.inputs.zoomRaw = glm::log(mandel.inputs.zoom);
 
 	curobj = &mandel;
 
 	screen scr;
+	scr.setResolution({SCR_WIDTH, SCR_HEIGHT});
 	scr.camera.loc = glm::vec3(0.0f, 0.0f, 2.0f);
 	scr.camera.fov = 1.0;
 
