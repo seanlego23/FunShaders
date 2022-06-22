@@ -1,5 +1,6 @@
 #include <glad/glad.h>
 #include <glfw/glfw3.h>
+#include <glm/glm.hpp>
 
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
@@ -122,6 +123,7 @@ int main(int argc, const char* argv[]) {
 	screen scr;
 	scr.setResolution({SCR_WIDTH, SCR_HEIGHT});
 	scr.camera.loc = glm::vec3(0.0f, 0.0f, 2.0f);
+	scr.camera.lookAt = glm::vec3(0.0f);
 	scr.camera.fov = 1.0;
 
 	curscr = &scr;
