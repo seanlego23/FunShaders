@@ -20,6 +20,6 @@ public:
 
 	void resetTime();
 
-	void draw_screen(class shader* s, const struct shader_inputs* si);
+	void draw_screen(const class shader_object* obj);
 };
 

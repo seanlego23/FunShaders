@@ -1,6 +1,7 @@
 #include "screen.h"
 #include "shader.h"
 #include "shader_inputs.h"
+#include "shader_object.h"
 
 static GLfloat screen_coords[] = {
 	-1.0f, -1.0f, 0.0f,
@@ -35,17 +36,16 @@ void screen::resetTime() {
 	_time = 0.0f;
 }
 
-void screen::draw_screen(shader* s, const shader_inputs* si) {
-	_time += si->elapsedTime;
+void screen::draw_screen(const shader_object* obj) {
+	_time += obj->inputs.elapsedTime;
 
-	s->use();
+	obj->use();
 
-	GLuint prog = s->getProgram();
-
-	glUniform2f(glGetUniformLocation(prog, "resolution"), si->resolution.x, si->resolution.y);
+	GLuint prog = obj->getProgram();
+	obj->inputs.send_uniforms(prog);
 	glUniform1f(glGetUniformLocation(prog, "time"), _time);
-	glUniform1f(glGetUniformLocation(prog, "elapsedTime"), si->elapsedTime);
-	glUniform1f(glGetUniformLocation(prog, "zoom"), si->zoom);
+	glUniform3fv(glGetUniformLocation(prog, "camera.loc"), 1, &camera.loc.x);
+	glUniform1f(glGetUniformLocation(prog, "camera.fov"), camera.fov);
 
 	glBindVertexArray(_vao);
 
