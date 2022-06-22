@@ -8,7 +8,5 @@ public:
 	mandelbrot();
 	~mandelbrot() override = default;
 
-	void setup_render() override;
-
 };
 

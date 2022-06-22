@@ -19,6 +19,5 @@ public:
 
 	virtual void key_input(int key, int scancode, int action, int mods);
 
-	virtual void setup_render() = 0;
 };
 
