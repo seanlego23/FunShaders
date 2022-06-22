@@ -4,6 +4,7 @@ struct Camera {
 	vec3 loc;
 	vec3 lookAt;
 	float fov; //1.0 == 90 degrees
+	mat4 view;
 };
 
 uniform vec2 resolution;

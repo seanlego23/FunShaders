@@ -1,3 +1,7 @@
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 #include "screen.h"
 #include "shader.h"
 #include "shader_inputs.h"
@@ -55,6 +59,8 @@ void screen::setCursorPos(glm::vec2 curpos) {
 void screen::draw_screen(const shader_object* obj) {
 	_time += obj->inputs.elapsedTime;
 
+	glm::mat4 view = glm::lookAt(camera.loc, camera.lookAt, glm::vec3(0.0f, 0.0f, 1.0f));
+
 	obj->use();
 
 	GLuint prog = obj->getProgram();
@@ -65,6 +71,7 @@ void screen::draw_screen(const shader_object* obj) {
 	glUniform3fv(glGetUniformLocation(prog, "camera.loc"), 1, &camera.loc.x);
 	glUniform3fv(glGetUniformLocation(prog, "camera.lookAt"), 1, &camera.lookAt.x);
 	glUniform1f(glGetUniformLocation(prog, "camera.fov"), camera.fov);
+	glUniformMatrix4fv(glGetUniformLocation(prog, "camera.cam"), 1, GL_FALSE, glm::value_ptr(view));
 	glUniform1f(glGetUniformLocation(prog, "time"), _time);
 
 	glBindVertexArray(_vao);
