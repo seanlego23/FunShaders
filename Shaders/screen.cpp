@@ -66,10 +66,12 @@ void screen::draw_screen(const shader_object* obj) {
 	GLuint prog = obj->getProgram();
 	obj->inputs.send_uniforms(prog);
 
-	glUniform2fv(glGetUniformLocation(prog, "resolution"), 1, &_resolution.x);
-	glUniform2fv(glGetUniformLocation(prog, "cursorPos"), 1, &_cursorPos.x);
-	glUniform3fv(glGetUniformLocation(prog, "camera.loc"), 1, &camera.loc.x);
-	glUniform3fv(glGetUniformLocation(prog, "camera.lookAt"), 1, &camera.lookAt.x);
+	glUniform2fv(glGetUniformLocation(prog, "resolution"), 1, glm::value_ptr(_resolution));
+	glUniform2fv(glGetUniformLocation(prog, "cursorPos"), 1, glm::value_ptr(_cursorPos));
+	glUniform3fv(glGetUniformLocation(prog, "camera.loc"), 1, glm::value_ptr(camera.loc));
+	glUniform3fv(glGetUniformLocation(prog, "camera.lookAt"), 1, glm::value_ptr(camera.lookAt));
+	glUniform3fv(glGetUniformLocation(prog, "camera.up"), 1, glm::value_ptr(camera.up));
+	glUniform3fv(glGetUniformLocation(prog, "camera.right"), 1, glm::value_ptr(camera.right));
 	glUniform1f(glGetUniformLocation(prog, "camera.fov"), camera.fov);
 	glUniformMatrix4fv(glGetUniformLocation(prog, "camera.cam"), 1, GL_FALSE, glm::value_ptr(view));
 	glUniform1f(glGetUniformLocation(prog, "time"), _time);
