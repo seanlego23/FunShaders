@@ -1,6 +1,7 @@
 #include <glad/glad.h>
 #include <glfw/glfw3.h>
 #include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
@@ -11,6 +12,7 @@
 #include <filesystem>
 #include <iostream>
 
+#include "mandelbowl.h"
 #include "mandelbrot.h"
 #include "screen.h"
 #include "shader.h"
@@ -27,6 +29,8 @@ const unsigned int SCR_HEIGHT = 720;
 static shader_object* curobj;
 static screen* curscr;
 static int button_mask = 0;
+
+static float rotate_speed = 350.0f;
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void cursor_position_callback(GLFWwindow* window, double xpos, double ypos);
@@ -118,12 +122,19 @@ int main(int argc, const char* argv[]) {
 	mandel.inputs.zoom = 0.8f;
 	mandel.inputs.zoomRaw = glm::log(mandel.inputs.zoom);
 
-	curobj = &mandel;
+	mandelbowl bowl;
+
+	bowl.inputs.zoom = 0.8f;
+	bowl.inputs.zoomRaw = glm::log(bowl.inputs.zoom);
+
+	curobj = &bowl;
 
 	screen scr;
 	scr.setResolution({SCR_WIDTH, SCR_HEIGHT});
 	scr.camera.loc = glm::vec3(0.0f, 0.0f, 2.0f);
 	scr.camera.lookAt = glm::vec3(0.0f);
+	scr.camera.up = glm::normalize(glm::vec3(0.0f, 1.0f, 0.0f));
+	scr.camera.right = glm::vec3(1.0f, 0.0f, 0.0f);
 	scr.camera.fov = 1.0;
 
 	curscr = &scr;
@@ -183,9 +194,35 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
 	//Flip the y because rendering is done from lower left and cursor is from upper left
 	glm::vec2 new_pos = glm::vec2((float)xpos, res.y - (float)ypos);
 
+	glm::vec2 old_pos = curscr->getCursorPos();
+	glm::vec2 s_dir = screenToWorldDir(new_pos - old_pos);
+
 	if (button_mask & PAN_BUTTON_MASK) {
-		glm::vec2 old_pos = curscr->getCursorPos();
-		curscr->camera.loc -= glm::vec3(screenToWorldDir(new_pos - old_pos), 0.0f);
+		//Pan the camera in reference to current camera plane
+		glm::vec3 x_dir = curscr->camera.right * s_dir.x;
+		glm::vec3 y_dir = curscr->camera.up * s_dir.y;
+		glm::vec3 n_dir = x_dir + y_dir;
+		curscr->camera.loc -= n_dir;
+		curscr->camera.lookAt -= n_dir;
+	} else if (button_mask & ROTATE_BUTTON_MASK) {
+		//Arcball rotation around camera's lookAt point
+		float x_scale = -s_dir.x / res.x * rotate_speed * 2.0f;
+		float y_scale = s_dir.y / res.y * rotate_speed * 2.0f;
+		float x_sin_half = glm::sin(x_scale / 2);
+		float y_sin_half = glm::sin(y_scale / 2);
+		float x_cos_half = glm::cos(x_scale / 2);
+		float y_cos_half = glm::cos(y_scale / 2);
+		glm::vec3 x_rot = curscr->camera.up * x_sin_half;
+		glm::vec3 y_rot = curscr->camera.right * y_sin_half;
+		glm::quat x_quat(x_cos_half, x_rot);
+		glm::quat y_quat(y_cos_half, y_rot);
+		glm::quat qua = x_quat * y_quat;
+		glm::mat4 rot_mat(qua);
+		
+		glm::vec3 cam_dir = curscr->camera.loc - curscr->camera.lookAt;
+		curscr->camera.loc = curscr->camera.lookAt + glm::vec3(rot_mat * glm::vec4(cam_dir, 0.0f));
+		curscr->camera.up = glm::vec3(rot_mat * glm::vec4(curscr->camera.up, 0.0f));
+		curscr->camera.right = glm::vec3(rot_mat * glm::vec4(curscr->camera.right, 0.0f));
 	}
 
 	curscr->setCursorPos(new_pos);
