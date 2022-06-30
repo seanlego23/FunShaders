@@ -1,5 +1,14 @@
 #version 460
 
+#define PART_SKY	0
+#define PART_PLANE	1
+#define PART_SET	2
+#define PART_INC	3
+
+#define FLOAT_PREC 	0.0000005
+#define PI_2 		1.570796327
+#define SQRT_2 		0.7071067812
+
 struct Camera {
 	vec3 loc;
 	vec3 lookAt;
@@ -15,10 +24,6 @@ struct DirLight {
 	vec3 spec;
 };
 
-#define FLOAT_PREC 0.0000005
-#define PI_2 1.570796327
-#define SQRT_2 0.7071067812
-
 uniform vec2 resolution;
 uniform float time;
 uniform float elapsedTime;
@@ -26,6 +31,8 @@ uniform float zoom;
 uniform float zoomRaw;
 
 uniform Camera camera;
+
+uniform sampler2D part_tex;
 
 out vec4 FragColor;
 
