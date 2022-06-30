@@ -194,8 +194,8 @@ vec3 render(vec2 p, mat4 view) {
 	vec3 rdx = normalize((view * vec4(pixel_loc_x, camera.fov, 0.0)).xyz);
 	vec3 rdy = normalize((view * vec4(pixel_loc_y, camera.fov, 0.0)).xyz);
 	
-	float plane_intersect[5], bowl_intersect[5];
-	raycast(ray_origin, ray_dir, rdx, rdy, plane_intersect[0], bowl_intersect[0]);
+	float plane_intersect, bowl_intersect;
+	raycast(ray_origin, ray_dir, rdx, rdy, plane_intersect, bowl_intersect);
 	
 	//No intersection
 	if (plane_intersect < 0.0 && bowl_intersect < 0.0)
