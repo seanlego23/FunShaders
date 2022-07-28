@@ -39,7 +39,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 
 void drawImGui() {
 
-	float zoom = curobj->inputs.zoom;
+	float zoom = curobj->get_inputs()->zoom;
 	glm::vec3 loc = curscr->camera.loc;
 	float fov = curscr->camera.fov;
 
@@ -60,8 +60,8 @@ void drawImGui() {
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
 	if (changeZoom) {
-		curobj->inputs.zoom = zoom;
-		curobj->inputs.zoomRaw = glm::log(zoom);
+		curobj->get_inputs()->zoom = zoom;
+		curobj->get_inputs()->zoomRaw = glm::log(zoom);
 	}
 
 	if (changeLoc) {
@@ -73,12 +73,59 @@ void drawImGui() {
 	}
 }
 
+void APIENTRY glDebugOutput(GLenum source,
+	GLenum type,
+	unsigned int id,
+	GLenum severity,
+	GLsizei length,
+	const char* message,
+	const void* userParam)
+{
+	if (id == 131169 || id == 131185 || id == 131218 || id == 131204) return; // ignore these non-significant error codes
+
+	std::cout << "---------------" << std::endl;
+	std::cout << "Debug message (" << id << "): " << message << std::endl;
+
+	switch (source)
+	{
+	case GL_DEBUG_SOURCE_API:             std::cout << "Source: API"; break;
+	case GL_DEBUG_SOURCE_WINDOW_SYSTEM:   std::cout << "Source: Window System"; break;
+	case GL_DEBUG_SOURCE_SHADER_COMPILER: std::cout << "Source: Shader Compiler"; break;
+	case GL_DEBUG_SOURCE_THIRD_PARTY:     std::cout << "Source: Third Party"; break;
+	case GL_DEBUG_SOURCE_APPLICATION:     std::cout << "Source: Application"; break;
+	case GL_DEBUG_SOURCE_OTHER:           std::cout << "Source: Other"; break;
+	} std::cout << std::endl;
+
+	switch (type)
+	{
+	case GL_DEBUG_TYPE_ERROR:               std::cout << "Type: Error"; break;
+	case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: std::cout << "Type: Deprecated Behaviour"; break;
+	case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:  std::cout << "Type: Undefined Behaviour"; break;
+	case GL_DEBUG_TYPE_PORTABILITY:         std::cout << "Type: Portability"; break;
+	case GL_DEBUG_TYPE_PERFORMANCE:         std::cout << "Type: Performance"; break;
+	case GL_DEBUG_TYPE_MARKER:              std::cout << "Type: Marker"; break;
+	case GL_DEBUG_TYPE_PUSH_GROUP:          std::cout << "Type: Push Group"; break;
+	case GL_DEBUG_TYPE_POP_GROUP:           std::cout << "Type: Pop Group"; break;
+	case GL_DEBUG_TYPE_OTHER:               std::cout << "Type: Other"; break;
+	} std::cout << std::endl;
+
+	switch (severity)
+	{
+	case GL_DEBUG_SEVERITY_HIGH:         std::cout << "Severity: high"; break;
+	case GL_DEBUG_SEVERITY_MEDIUM:       std::cout << "Severity: medium"; break;
+	case GL_DEBUG_SEVERITY_LOW:          std::cout << "Severity: low"; break;
+	case GL_DEBUG_SEVERITY_NOTIFICATION: std::cout << "Severity: notification"; break;
+	} std::cout << std::endl;
+	std::cout << std::endl;
+}
+
 int main(int argc, const char* argv[]) {
 	//Initialize glfw
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 
 	//Create window
 	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Digital Notes", NULL, NULL);
@@ -99,6 +146,15 @@ int main(int argc, const char* argv[]) {
 		return -1;
 	}
 
+	int flags; glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
+	if (flags & GL_CONTEXT_FLAG_DEBUG_BIT)
+	{
+		glEnable(GL_DEBUG_OUTPUT);
+		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS); // makes sure errors are displayed synchronously
+		glDebugMessageCallback(glDebugOutput, nullptr);
+		glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
+	}
+
 	namespace fs = std::filesystem;
 	
 	fs::path data(*argv);
@@ -117,23 +173,17 @@ int main(int argc, const char* argv[]) {
 	if (!shader::init_vert())
 		return -1;
 
-	mandelbrot mandel;
-
-	mandel.inputs.zoom = 0.8f;
-	mandel.inputs.zoomRaw = glm::log(mandel.inputs.zoom);
+	mandelbrot mandel({ 0.0f, 0.8f, glm::log(0.8f) });
 
 	mandelbowl bowl;
-
-	bowl.inputs.zoom = 0.8f;
-	bowl.inputs.zoomRaw = glm::log(bowl.inputs.zoom);
 
 	curobj = &bowl;
 
 	screen scr;
 	scr.setResolution({SCR_WIDTH, SCR_HEIGHT});
-	scr.camera.loc = glm::vec3(0.0f, 0.0f, 2.0f);
+	scr.camera.loc = glm::vec3(0.0f, -2.0f, 1.0f);
 	scr.camera.lookAt = glm::vec3(0.0f);
-	scr.camera.up = glm::normalize(glm::vec3(0.0f, 1.0f, 0.0f));
+	scr.camera.up = glm::normalize(glm::vec3(0.0f, 0.0f, 1.0f));
 	scr.camera.right = glm::vec3(1.0f, 0.0f, 0.0f);
 	scr.camera.fov = 1.0;
 
@@ -151,7 +201,7 @@ int main(int argc, const char* argv[]) {
 		glClear(GL_COLOR_BUFFER_BIT);
 		glClear(GL_DEPTH_BUFFER_BIT);
 
-		curobj->inputs.elapsedTime = (float)elapsedTime;
+		curobj->get_inputs()->elapsedTime = (float)elapsedTime;
 
 		curscr->draw_screen(curobj);
 
@@ -171,17 +221,17 @@ int main(int argc, const char* argv[]) {
 
 glm::vec2 screenToWorld(glm::vec2 coord) {
 	glm::vec2 res = curscr->getResolution();
-	return (2.0f * coord - res) / (res.y * curobj->inputs.zoom) + glm::vec2(curscr->camera.loc);
+	return (2.0f * coord - res) / (res.y * curobj->get_inputs()->zoom) + glm::vec2(curscr->camera.loc);
 }
 
 glm::vec2 screenToWorldDir(glm::vec2 dir) {
 	glm::vec2 res = curscr->getResolution();
-	return 2.0f * dir / (res.y * curobj->inputs.zoom);
+	return 2.0f * dir / (res.y * curobj->get_inputs()->zoom);
 }
 
 glm::vec2 worldToScreen(glm::vec2 coord) {
 	glm::vec2 res = curscr->getResolution();
-	return ((coord - glm::vec2(curscr->camera.loc)) * (res.y * curobj->inputs.zoom) + res) / 2.0f;
+	return ((coord - glm::vec2(curscr->camera.loc)) * (res.y * curobj->get_inputs()->zoom) + res) / 2.0f;
 }
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
@@ -232,8 +282,10 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
 	glm::vec2 curpos = curscr->getCursorPos();
 	glm::vec2 pos = screenToWorld(curpos);
 
-	curobj->inputs.zoomRaw += (float)yoffset;
-	curobj->inputs.zoom = glm::exp(0.05f * curobj->inputs.zoomRaw);
+	shader_inputs* curin = curobj->get_inputs();
+
+	curin->zoomRaw += (float)yoffset;
+	curin->zoom = glm::exp(0.05f * curin->zoomRaw);
 
 	glm::vec2 new_cursorPos = worldToScreen(pos);
 	curscr->camera.loc += glm::vec3(screenToWorldDir(new_cursorPos - curpos), 0.0f);
