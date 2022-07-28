@@ -1,12 +1,10 @@
+#include <glad/glad.h>
+
 #include "screen.h"
 #include "shader_object.h"
 #include "shader_inputs.h"
 
-shader_object::shader_object(const char *shader_file) : _mainShader(shader_file), _inputs() { }
-
-shader_inputs* shader_object::get_inputs() {
-	return &this->_inputs;
-}
+shader_object::shader_object(const char *shader_file) : _mainShader(shader_file) { }
 
 void shader_object::mouse_button(int button, int action, int mods) {
 	//Behavior is implemented by derived class
@@ -24,6 +22,11 @@ int shader_object::input_shaders_count() const {
 	return 0;
 }
 
-bool shader_object::setup_input_shader(const int index) {
-	return false;
+GLuint shader_object::setup_input_shader(const int index) {
+	return 0;
+}
+
+GLuint shader_object::use_main_program() {
+	_mainShader.use();
+	return _mainShader.getProgram();
 }
