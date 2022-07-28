@@ -2,9 +2,10 @@
 layout (location = 0) out int partID;
 
 #define PART_SKY	0
-#define PART_PLANE	1
-#define PART_SET	2
-#define PART_INC	3
+#define PART_SET	1
+#define PART_INC	2
+
+#define FLOAT_PREC 	0.0000005
 
 struct Camera {
 	vec3 loc;
@@ -84,18 +85,17 @@ float distanceToMandelbrot(in vec2 c)
 }
 
 void main() {
-	vec3 up = vec3(0.0, 0.0, 1.0);
 	vec3 cd = normalize(camera.lookAt - camera.loc);
 	vec3 cx = normalize(camera.right);
 	vec3 cy = normalize(camera.up);
-	mat4 view = mat4(cx, 0.0, cy, 0.0, cd, 0.0, 0.0, 0.0, 0.0, 1.0);
+	mat4 view = transpose(mat4(cx, 0.0, cy, 0.0, cd, 0.0, 0.0, 0.0, 0.0, 1.0));
 
 	vec2 pv = (2.0 * gl_FragCoord.xy - resolution) / (resolution.y * zoom);
 	vec3 ro = camera.loc;
 	vec3 rd = normalize((view * vec4(pv, camera.fov, 0.0)).xyz);
 	
 	vec2 intersection = eliIntersect(ro, rd, vec3(2.0, 1.25, 1.25));
-	float txy = -ro.z / rd.z;
+	float txy = !equalf(rd.z, 0.0) ? -ro.z / rd.z : -1.0;
 	float tb = intersection.x;
 	float dist = distanceToMandelbrot((ro + txy * rd).xy);
 	
@@ -103,11 +103,31 @@ void main() {
 	bool set = equalf(dist, 0.0);
 	bool inc = intersection.x >= 0.0 || intersection.y >= 0.0;
 	
+	//Remove top half of ellipsoid from consideration
+	if (inc) {
+		//If the first intersection point is below the xy-plane and in front of the camera, then it's ok.
+		//If the second intersection point is below the xy-plane and in front of the camera, then it's ok.
+		//If neither, then either both intersection points are above the xy-plane, or the camera is facing
+		//in the positive z direction.
+		
+/* 		float xZ = (ro + intersection.x * rd).z;
+		float yZ = (ro + intersection.y * rd).z;
+		bool xZL = xZ <= FLOAT_PREC;
+		bool yZL = yZ <= FLOAT_PREC;
+		bool ixG = intersection.x >= 0.0;
+		bool iyG = intersection.y >= 0.0;
+		bool xS = (xZL && ixG);
+		bool yS = (yZL && iyG);
+		bool S = xS || yS;
+		bool negZ = S; */
+		
+		bool negZ = ((ro + intersection.x * rd).z <= FLOAT_PREC && intersection.x >= 0.0) || ((ro + intersection.y * rd).z <= FLOAT_PREC && intersection.y >= 0.0);
+		inc = negZ;
+	}
+	
 	part = inc ? PART_INC : part;
 	if (txy >= 0.0 && set)
 		part = PART_SET;
-	else if (txy >= 0.0 && !inc)
-		part = PART_PLANE;
 		
 	partID = part;
 }
