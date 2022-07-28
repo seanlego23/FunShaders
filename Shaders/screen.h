@@ -32,6 +32,6 @@ public:
 
 	void setCursorPos(glm::vec2 curpos);
 
-	void draw_screen(const class shader_object* obj);
+	void draw_screen(class shader_object* obj);
 };
 

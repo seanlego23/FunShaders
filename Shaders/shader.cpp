@@ -12,7 +12,7 @@ static const char* vpath = "data/vert.glsl";
 static std::string vtext;
 static GLuint vShader = 0;
 
-bool checkCompileErrors(GLuint shader, std::string type);
+bool checkCompileErrors(GLuint shader, std::string type, std::string file);
 
 shader::shader(const char *frag_path) {
 	_fpath = frag_path;
@@ -34,13 +34,13 @@ shader::shader(const char *frag_path) {
 	_fShader = glCreateShader(GL_FRAGMENT_SHADER);
 	glShaderSource(_fShader, 1, &cftext, NULL);
 	glCompileShader(_fShader);
-	checkCompileErrors(_fShader, "FRAGMENT");
+	checkCompileErrors(_fShader, "FRAGMENT", _fpath);
 
 	_program = glCreateProgram();
 	glAttachShader(_program, vShader);
 	glAttachShader(_program, _fShader);
 	glLinkProgram(_program);
-	checkCompileErrors(_program, "PROGRAM");
+	checkCompileErrors(_program, "PROGRAM", _fpath);
 }
 
 bool shader::init_vert() {
@@ -62,7 +62,7 @@ bool shader::init_vert() {
 	vShader = glCreateShader(GL_VERTEX_SHADER);
 	glShaderSource(vShader, 1, &cvtext, NULL);
 	glCompileShader(vShader);
-	return checkCompileErrors(vShader, "VERTEX");
+	return checkCompileErrors(vShader, "VERTEX", "data/vert.glsl");
 }
 
 void shader::destroy_vert() {
@@ -83,13 +83,14 @@ void shader::use() const {
 	glUseProgram(_program);
 }
 
-bool checkCompileErrors(GLuint shader, std::string type) {
+bool checkCompileErrors(GLuint shader, std::string type, std::string file) {
     int success;
     char infoLog[1024];
     if (type != "PROGRAM") {
         glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
         if (!success) {
             glGetShaderInfoLog(shader, 1024, NULL, infoLog);
+			std::cout << file << "\n";
             std::cout << "ERROR::SHADER_COMPILATION_ERROR of type: " << type << "\n" << infoLog << "\n -- --------------------------------------------------- -- " << std::endl;
 			return false;
         }
@@ -97,6 +98,7 @@ bool checkCompileErrors(GLuint shader, std::string type) {
         glGetProgramiv(shader, GL_LINK_STATUS, &success);
         if (!success) {
             glGetProgramInfoLog(shader, 1024, NULL, infoLog);
+			std::cout << file << "\n";
             std::cout << "ERROR::PROGRAM_LINKING_ERROR of type: " << type << "\n" << infoLog << "\n -- --------------------------------------------------- -- " << std::endl;
 			return false;
         }

@@ -56,15 +56,36 @@ void screen::setCursorPos(glm::vec2 curpos) {
 	_cursorPos = curpos;
 }
 
-void screen::draw_screen(const shader_object* obj) {
-	_time += obj->inputs.elapsedTime;
+void screen::draw_screen(shader_object* obj) {
+	_time += obj->get_inputs()->elapsedTime;
 
-	glm::mat4 view = glm::lookAt(camera.loc, camera.lookAt, glm::vec3(0.0f, 0.0f, 1.0f));
+	if (obj->has_input_shaders()) {
+		int last = obj->input_shaders_count();
+		for (int i = 0; i < last; i++) {
+			GLuint prog = obj->setup_input_shader(i);
 
-	obj->use();
+			obj->get_inputs()->send_data(prog);
 
-	GLuint prog = obj->getProgram();
-	obj->inputs.send_uniforms(prog);
+			glUniform2fv(glGetUniformLocation(prog, "resolution"), 1, glm::value_ptr(_resolution));
+			glUniform2fv(glGetUniformLocation(prog, "cursorPos"), 1, glm::value_ptr(_cursorPos));
+			glUniform3fv(glGetUniformLocation(prog, "camera.loc"), 1, glm::value_ptr(camera.loc));
+			glUniform3fv(glGetUniformLocation(prog, "camera.lookAt"), 1, glm::value_ptr(camera.lookAt));
+			glUniform3fv(glGetUniformLocation(prog, "camera.up"), 1, glm::value_ptr(camera.up));
+			glUniform3fv(glGetUniformLocation(prog, "camera.right"), 1, glm::value_ptr(camera.right));
+			glUniform1f(glGetUniformLocation(prog, "camera.fov"), camera.fov);
+			glUniform1f(glGetUniformLocation(prog, "time"), _time);
+
+			glBindVertexArray(_vao);
+
+			glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+		}
+	}
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	GLuint prog = obj->use_main_program();
+
+	obj->get_inputs()->send_data(prog);
 
 	glUniform2fv(glGetUniformLocation(prog, "resolution"), 1, glm::value_ptr(_resolution));
 	glUniform2fv(glGetUniformLocation(prog, "cursorPos"), 1, glm::value_ptr(_cursorPos));
@@ -73,7 +94,6 @@ void screen::draw_screen(const shader_object* obj) {
 	glUniform3fv(glGetUniformLocation(prog, "camera.up"), 1, glm::value_ptr(camera.up));
 	glUniform3fv(glGetUniformLocation(prog, "camera.right"), 1, glm::value_ptr(camera.right));
 	glUniform1f(glGetUniformLocation(prog, "camera.fov"), camera.fov);
-	glUniformMatrix4fv(glGetUniformLocation(prog, "camera.cam"), 1, GL_FALSE, glm::value_ptr(view));
 	glUniform1f(glGetUniformLocation(prog, "time"), _time);
 
 	glBindVertexArray(_vao);
