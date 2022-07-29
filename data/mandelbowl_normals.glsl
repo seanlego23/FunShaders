@@ -1,5 +1,6 @@
 #version 460
 layout (location = 0) out vec3 bNormal;
+layout (location = 1) out int bMask;
 
 #define PART_SKY	0
 #define PART_SET	1
@@ -274,6 +275,7 @@ float raycast(in vec3 ro, in vec3 rd, in vec3 rdx, in vec3 rdy) {
 
 void main() {
 	bNormal = vec3(0.0);
+	bMask = 0;
 
 	int partID = texture(part_tex, gl_FragCoord.xy / resolution).x;
 	
@@ -303,6 +305,7 @@ void main() {
 		bNormal = -rd;
 		return;
 	}
+	bMask = 1;
 	
 	vec3 pos = ro + t * rd;
 	vec2 posXY = vec2(pos.x, sign(pos.y) * length(pos.yz));

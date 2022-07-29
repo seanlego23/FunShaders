@@ -10,6 +10,7 @@ class mandelbowl : public shader_object {
 	struct mandelbowl_inputs : public shader_inputs {
 		GLuint partTexture = 0;
 		GLuint normTexture = 0;
+		GLuint maskTexture = 0;
 
 		mandelbowl_inputs() { }
 

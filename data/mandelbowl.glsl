@@ -31,6 +31,7 @@ uniform Camera camera;
 
 layout(binding = 0) uniform isampler2D part_tex;
 layout(binding = 1) uniform sampler2D normal_tex;
+layout(binding = 2) uniform isampler2D mask_tex;
 
 out vec4 FragColor;
 
@@ -61,12 +62,15 @@ void main() {
 	
 	vec2 p = gl_FragCoord.xy;
 	int partID[9];
+	int mask[9];
 	partID[8] = texture(part_tex, p / resolution).x;
+	mask[8] = texture(mask_tex, p / resolution).x;
 	
 	vec2 offset = vec2(-1.0);
 	vec2 dOffset = vec2(1.0, 0.0);
 	for (int i = 0; i < 8; i++, offset += dOffset) {
 		partID[i] = texture(part_tex, (p + offset) / resolution).x;
+		mask[i] = texture(mask_tex, (p + offset) / resolution).x;
 		if (i % 2 == 0 && i > 0)
 			dOffset = dOffset.yx;
 		if (i % 4 == 0 && i > 0)
@@ -75,8 +79,12 @@ void main() {
 
 	vec3 partCol[9];
 	for (int i = 0; i < 9; i++) {
-		partCol[i] = partID[i] == PART_SKY ? sky : black;
-		partCol[i] = partID[i] == PART_INC ? bowl : black;
+		partCol[i] = black;
+		if (partID[i] == PART_SKY)
+			partCol[i] = sky;
+		if (partID[i] == PART_INC) {
+			partCol[i] = mask[i] == 1 ? bowl : sky;
+		}
 	}
 	
 	offset = vec2(-0.5);
