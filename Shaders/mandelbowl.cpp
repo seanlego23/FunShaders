@@ -53,6 +53,9 @@ void mandelbowl::init() {
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, _inputs.normTexture, 0);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, _inputs.maskTexture, 0);
 
+	unsigned int attachments[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+	glDrawBuffers(2, attachments);
+
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!\n";
 
@@ -125,8 +128,6 @@ GLuint mandelbowl::setup_input_shader(const int index) {
 			glClear(GL_COLOR_BUFFER_BIT);
 			_normShader.use();
 
-			glEnable(GL_DITHER);
-
 			return _normShader.getProgram();
 		}
 		default:
@@ -178,6 +179,9 @@ void mandelbowl::framebuffer_resize(int width, int height) {
 	glBindFramebuffer(GL_FRAMEBUFFER, _normFB);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, _inputs.normTexture, 0);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, _inputs.maskTexture, 0);
+
+	unsigned int attachments[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
+	glDrawBuffers(2, attachments);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
