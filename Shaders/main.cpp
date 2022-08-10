@@ -37,6 +37,8 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 
+bool test_arcball(float x_angle, float y_angle, const glm::vec3 loc, const glm::vec3 up, const glm::vec3 right);
+
 void drawImGui() {
 
 	float zoom = curobj->get_inputs()->zoom;
@@ -181,13 +183,27 @@ int main(int argc, const char* argv[]) {
 
 	screen scr;
 	scr.setResolution({SCR_WIDTH, SCR_HEIGHT});
-	scr.camera.loc = glm::vec3(0.0f, -2.0f, 1.0f);
-	scr.camera.lookAt = glm::vec3(0.0f);
-	scr.camera.up = glm::normalize(glm::vec3(0.0f, 0.0f, 1.0f));
+	scr.camera.loc = glm::vec3(0.0f, -2.0f, 1.0);
+	scr.camera.lookAt = glm::normalize(glm::vec3(0.0f) - scr.camera.loc);
 	scr.camera.right = glm::vec3(1.0f, 0.0f, 0.0f);
+	scr.camera.up = glm::normalize(glm::cross(scr.camera.right, scr.camera.lookAt));
 	scr.camera.fov = 1.0;
 
 	curscr = &scr;
+
+	/*constexpr float PI = 3.141592654f;
+	constexpr float SQRT_2 = 1.414213562f;
+
+	bool result = test_arcball(PI / 4.f, 0.0f, {SQRT_2 / 2.f, -SQRT_2 / 2.f, 0.0f}, {0.0f, 0.0f, 1.0f}, {SQRT_2 / 2.f, SQRT_2 / 2.f, 0.0f});
+	assert(result);
+
+	scr.camera.loc = glm::normalize(glm::vec3(-1.0f, -1.0f, 1.0f));
+	scr.camera.lookAt = glm::normalize(glm::vec3(0.0f) - scr.camera.loc);
+	scr.camera.right = glm::normalize(glm::vec3(1.0f, -1.0f, 0.0f));
+	scr.camera.up = glm::normalize(glm::cross(scr.camera.right, scr.camera.lookAt));
+
+	result = test_arcball(PI / 3.f, PI / 4.f, {0.2639107f, -0.9608342f, -0.084551f}, {-0.1195732f, -0.1195732f, 0.9855986f}, {0.8535534f, 0.1464466f, -0.5f});
+	assert(result);*/
 
 	double time = std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
 	double elapsedTime = 0.0;
@@ -237,6 +253,7 @@ glm::vec2 worldToScreen(glm::vec2 coord) {
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 	glViewport(0, 0, width, height);
 	curscr->setResolution({width, height});
+	curobj->framebuffer_resize(width, height);
 }
 
 void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
@@ -253,12 +270,11 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
 		glm::vec3 y_dir = curscr->camera.up * s_dir.y;
 		glm::vec3 n_dir = x_dir + y_dir;
 		curscr->camera.loc -= n_dir;
-		curscr->camera.lookAt -= n_dir;
 	} else if (button_mask & ROTATE_BUTTON_MASK) {
 		//Arcball rotation around camera's lookAt point
 		float x_scale = -s_dir.x / res.x * rotate_speed * 2.0f;
-		float y_scale = s_dir.y / res.y * rotate_speed * 2.0f;
-		float x_sin_half = glm::sin(x_scale / 2);
+		float y_scale = s_dir.y / res.y * rotate_speed;
+		float x_sin_half = glm::sin(x_scale / 2); //Half angle for quaternion
 		float y_sin_half = glm::sin(y_scale / 2);
 		float x_cos_half = glm::cos(x_scale / 2);
 		float y_cos_half = glm::cos(y_scale / 2);
@@ -269,17 +285,23 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
 		glm::quat qua = x_quat * y_quat;
 		glm::mat4 rot_mat(qua);
 		
-		glm::vec3 cam_dir = curscr->camera.loc - curscr->camera.lookAt;
-		curscr->camera.loc = curscr->camera.lookAt + glm::vec3(rot_mat * glm::vec4(cam_dir, 0.0f));
+		glm::vec3 cam_dir = curscr->camera.lookAt;
+		glm::vec3 ball_point = curscr->camera.loc + cam_dir;
+		curscr->camera.loc = ball_point - glm::vec3(rot_mat * glm::vec4(cam_dir, 0.0f));
 		curscr->camera.up = glm::vec3(rot_mat * glm::vec4(curscr->camera.up, 0.0f));
 		curscr->camera.right = glm::vec3(rot_mat * glm::vec4(curscr->camera.right, 0.0f));
+		curscr->camera.lookAt = glm::normalize(glm::cross(curscr->camera.up, curscr->camera.right));
 	}
 
 	curscr->setCursorPos(new_pos);
 }
 
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
-	glm::vec2 curpos = curscr->getCursorPos();
+	shader_inputs* curin = curobj->get_inputs();
+	
+	curin->zoomRaw += (float)yoffset;
+
+	/*glm::vec2 curpos = curscr->getCursorPos();
 	glm::vec2 pos = screenToWorld(curpos);
 
 	shader_inputs* curin = curobj->get_inputs();
@@ -288,12 +310,10 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
 	curin->zoom = glm::exp(0.05f * curin->zoomRaw);
 
 	glm::vec2 new_cursorPos = worldToScreen(pos);
-	curscr->camera.loc += glm::vec3(screenToWorldDir(new_cursorPos - curpos), 0.0f);
+	curscr->camera.loc += glm::vec3(screenToWorldDir(new_cursorPos - curpos), 0.0f)*/;
 }
 
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
-
-
 	if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
 		if (action == GLFW_PRESS)
 			button_mask = !button_mask ? PAN_BUTTON_MASK : button_mask;
@@ -305,5 +325,51 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 		else
 			button_mask = button_mask & ROTATE_BUTTON_MASK ? 0 : button_mask;
 	}
- 
+}
+
+std::ostream& operator<<(std::ostream& out, const glm::vec3& obj) {
+	out << "(" << obj.x << ", " << obj.y << ", " << obj.z << ")";
+	return out;
+}
+
+bool equalf(float a, float b) {
+	constexpr float FLOAT_PREC = 0.0000005f;
+	float diff = std::abs(b - a);
+	return diff < FLOAT_PREC || diff < std::abs(a * FLOAT_PREC) || diff < std::abs(b * FLOAT_PREC);
+}
+
+bool equal(const glm::vec3& v1, const glm::vec3& v2) {
+	return equalf(v1.x, v2.x) && equalf(v1.y, v2.y) && equalf(v1.z, v2.z);
+}
+
+bool test_arcball(float x_angle, float y_angle, const glm::vec3 loc, const glm::vec3 up, const glm::vec3 right) {
+	float x_sin_half = glm::sin(x_angle / 2); //Half angle for quaternion
+	float y_sin_half = glm::sin(y_angle / 2);
+	float x_cos_half = glm::cos(x_angle / 2);
+	float y_cos_half = glm::cos(y_angle / 2);
+	glm::vec3 x_rot = curscr->camera.up * x_sin_half;
+	glm::vec3 y_rot = curscr->camera.right * y_sin_half;
+	glm::quat x_quat(x_cos_half, x_rot);
+	glm::quat y_quat(y_cos_half, y_rot);
+	glm::quat qua = x_quat * y_quat;
+	glm::mat4 rot_mat(qua);
+
+	glm::vec3 cam_dir = curscr->camera.lookAt;
+	glm::vec3 ball_point = curscr->camera.loc + cam_dir;
+	glm::vec3 test_loc = ball_point - glm::vec3(rot_mat * glm::vec4(cam_dir, 0.0f));
+	glm::vec3 test_up = glm::vec3(rot_mat * glm::vec4(curscr->camera.up, 0.0f));
+	glm::vec3 test_right = glm::vec3(rot_mat * glm::vec4(curscr->camera.right, 0.0f));
+
+	bool bloc = equal(loc, test_loc);
+	bool bup = equal(up, test_up);
+	bool bright = equal(right, test_right);
+
+	if (!bloc)
+		std::cout << "Camera Location is incorrect: " << test_loc << " Correct: " << loc << "\n";
+	if (!bup)
+		std::cout << "Camera Up Direction is incorrect: " << test_up << " Correct: " << up << "\n";
+	if (!bright)
+		std::cout << "Camera Right Direction is incorrect: " << test_right << " Correct: " << right << "\n";
+
+	return bloc && bup && bright;
 }
