@@ -191,20 +191,6 @@ int main(int argc, const char* argv[]) {
 
 	curscr = &scr;
 
-	/*constexpr float PI = 3.141592654f;
-	constexpr float SQRT_2 = 1.414213562f;
-
-	bool result = test_arcball(PI / 4.f, 0.0f, {SQRT_2 / 2.f, -SQRT_2 / 2.f, 0.0f}, {0.0f, 0.0f, 1.0f}, {SQRT_2 / 2.f, SQRT_2 / 2.f, 0.0f});
-	assert(result);
-
-	scr.camera.loc = glm::normalize(glm::vec3(-1.0f, -1.0f, 1.0f));
-	scr.camera.lookAt = glm::normalize(glm::vec3(0.0f) - scr.camera.loc);
-	scr.camera.right = glm::normalize(glm::vec3(1.0f, -1.0f, 0.0f));
-	scr.camera.up = glm::normalize(glm::cross(scr.camera.right, scr.camera.lookAt));
-
-	result = test_arcball(PI / 3.f, PI / 4.f, {0.2639107f, -0.9608342f, -0.084551f}, {-0.1195732f, -0.1195732f, 0.9855986f}, {0.8535534f, 0.1464466f, -0.5f});
-	assert(result);*/
-
 	double time = std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
 	double elapsedTime = 0.0;
 
