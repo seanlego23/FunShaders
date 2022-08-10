@@ -9,8 +9,8 @@ struct Camera {
 	//Location of camera (World Coordinates)
 	glm::vec3 loc;
 
-	//Location camera is looking at (World Coordinates)
-	glm::vec3 lookAt;
+	//Direction camera is looking
+	glm::vec3 dir;
 
 	//Up vector for camera
 	glm::vec3 up;

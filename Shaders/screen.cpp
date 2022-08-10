@@ -69,7 +69,7 @@ void screen::draw_screen(shader_object* obj) {
 			glUniform2fv(glGetUniformLocation(prog, "resolution"), 1, glm::value_ptr(_resolution));
 			glUniform2fv(glGetUniformLocation(prog, "cursorPos"), 1, glm::value_ptr(_cursorPos));
 			glUniform3fv(glGetUniformLocation(prog, "camera.loc"), 1, glm::value_ptr(camera.loc));
-			glUniform3fv(glGetUniformLocation(prog, "camera.lookAt"), 1, glm::value_ptr(camera.lookAt));
+			glUniform3fv(glGetUniformLocation(prog, "camera.lookAt"), 1, glm::value_ptr(camera.dir));
 			glUniform3fv(glGetUniformLocation(prog, "camera.up"), 1, glm::value_ptr(camera.up));
 			glUniform3fv(glGetUniformLocation(prog, "camera.right"), 1, glm::value_ptr(camera.right));
 			glUniform1f(glGetUniformLocation(prog, "camera.fov"), camera.fov);
@@ -90,7 +90,7 @@ void screen::draw_screen(shader_object* obj) {
 	glUniform2fv(glGetUniformLocation(prog, "resolution"), 1, glm::value_ptr(_resolution));
 	glUniform2fv(glGetUniformLocation(prog, "cursorPos"), 1, glm::value_ptr(_cursorPos));
 	glUniform3fv(glGetUniformLocation(prog, "camera.loc"), 1, glm::value_ptr(camera.loc));
-	glUniform3fv(glGetUniformLocation(prog, "camera.lookAt"), 1, glm::value_ptr(camera.lookAt));
+	glUniform3fv(glGetUniformLocation(prog, "camera.lookAt"), 1, glm::value_ptr(camera.dir));
 	glUniform3fv(glGetUniformLocation(prog, "camera.up"), 1, glm::value_ptr(camera.up));
 	glUniform3fv(glGetUniformLocation(prog, "camera.right"), 1, glm::value_ptr(camera.right));
 	glUniform1f(glGetUniformLocation(prog, "camera.fov"), camera.fov);

@@ -184,9 +184,9 @@ int main(int argc, const char* argv[]) {
 	screen scr;
 	scr.setResolution({SCR_WIDTH, SCR_HEIGHT});
 	scr.camera.loc = glm::vec3(0.0f, -2.0f, 1.0);
-	scr.camera.lookAt = glm::normalize(glm::vec3(0.0f) - scr.camera.loc);
+	scr.camera.dir = glm::normalize(glm::vec3(0.0f) - scr.camera.loc);
 	scr.camera.right = glm::vec3(1.0f, 0.0f, 0.0f);
-	scr.camera.up = glm::normalize(glm::cross(scr.camera.right, scr.camera.lookAt));
+	scr.camera.up = glm::normalize(glm::cross(scr.camera.right, scr.camera.dir));
 	scr.camera.fov = 1.0;
 
 	curscr = &scr;
@@ -271,12 +271,12 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
 		glm::quat qua = x_quat * y_quat;
 		glm::mat4 rot_mat(qua);
 		
-		glm::vec3 cam_dir = curscr->camera.lookAt;
+		glm::vec3 cam_dir = curscr->camera.dir;
 		glm::vec3 ball_point = curscr->camera.loc + cam_dir;
 		curscr->camera.loc = ball_point - glm::vec3(rot_mat * glm::vec4(cam_dir, 0.0f));
 		curscr->camera.up = glm::vec3(rot_mat * glm::vec4(curscr->camera.up, 0.0f));
 		curscr->camera.right = glm::vec3(rot_mat * glm::vec4(curscr->camera.right, 0.0f));
-		curscr->camera.lookAt = glm::normalize(glm::cross(curscr->camera.up, curscr->camera.right));
+		curscr->camera.dir = glm::normalize(glm::cross(curscr->camera.up, curscr->camera.right));
 	}
 
 	curscr->setCursorPos(new_pos);
@@ -340,7 +340,7 @@ bool test_arcball(float x_angle, float y_angle, const glm::vec3 loc, const glm::
 	glm::quat qua = x_quat * y_quat;
 	glm::mat4 rot_mat(qua);
 
-	glm::vec3 cam_dir = curscr->camera.lookAt;
+	glm::vec3 cam_dir = curscr->camera.dir;
 	glm::vec3 ball_point = curscr->camera.loc + cam_dir;
 	glm::vec3 test_loc = ball_point - glm::vec3(rot_mat * glm::vec4(cam_dir, 0.0f));
 	glm::vec3 test_up = glm::vec3(rot_mat * glm::vec4(curscr->camera.up, 0.0f));
