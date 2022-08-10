@@ -249,7 +249,7 @@ vec2 findNormal(in float dist, in vec2 pos) {
 //Cast a ray into the scene to see what it hits
 float raycast(in vec3 ro, in vec3 rd, in vec3 rdx, in vec3 rdy) {
 	vec2 intersections = eliIntersect(ro, rd, vec3(2.0, 1.25, 1.25));
-	float t = ro.z >= 0.0 ? -ro.z / rd.z : intersections.x;
+	float t = ro.z >= 0.0 ? -ro.z / rd.z : max(intersections.x, 0.0);
 	
 	for (int i = 0; i < 128; i++) {
 		vec3 pos = ro + t * rd;
@@ -258,6 +258,11 @@ float raycast(in vec3 ro, in vec3 rd, in vec3 rdx, in vec3 rdy) {
 		float h = map(ro + t * rd);
 		float dx = length(pos - posx);
 		float dy = length(pos - posy);
+		
+		if (pos.z > 0.0 && !equalf(pos.z, 0.0)) {
+			t = -1.0;
+			break;
+		}
 		
 		//Less than or equal to half of pixel error
 		if (h <= 0.5 * min(dx, dy))
@@ -280,7 +285,7 @@ void main() {
 	int partID = texture(part_tex, gl_FragCoord.xy / resolution).x;
 	
 	vec3 up = vec3(0.0, 0.0, 1.0);
-	vec3 cd = normalize(camera.lookAt - camera.loc);
+	vec3 cd = normalize(camera.lookAt);
 	vec3 cx = normalize(camera.right);
 	vec3 cy = normalize(camera.up);
 	mat4 view = mat4(cx, 0.0, cy, 0.0, cd, 0.0, 0.0, 0.0, 0.0, 1.0);
@@ -294,8 +299,8 @@ void main() {
 	vec3 rdx = normalize((view * vec4(px, camera.fov, 0.0)).xyz);
 	vec3 rdy = normalize((view * vec4(py, camera.fov, 0.0)).xyz);
 	
-	if (partID != PART_INC) {
-		bNormal = partID == PART_SKY ? -rd : vec3(0.0, 0.0, 1.0);
+	if (partID == PART_SKY) {
+		bNormal = -rd;
 		return;
 	}
 	
@@ -305,9 +310,17 @@ void main() {
 		bNormal = -rd;
 		return;
 	}
-	bMask = 1;
+	
+	bMask = 2;
 	
 	vec3 pos = ro + t * rd;
+	if (equalf(pos.z, 0.0) && partID == PART_SET) {
+		bNormal = vec3(0.0, 0.0, 1.0);
+		return;
+	}
+	
+	bMask = 1;
+	
 	vec2 posXY = vec2(pos.x, sign(pos.y) * length(pos.yz));
 	float dist = distanceToMandelbrot(posXY);
 	vec3 normal = vec3(findNormal(dist, posXY), 0.0);	

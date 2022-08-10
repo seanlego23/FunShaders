@@ -53,12 +53,7 @@ vec3 getLightColor(in vec3 norm, in vec3 col) {
 	return ambient + diffuse + specular;
 }
 
-void main() {	
-	vec3 up = vec3(0.0, 0.0, 1.0);
-	vec3 cd = normalize(camera.lookAt - camera.loc);
-	vec3 cx = normalize(camera.right);
-	vec3 cy = normalize(camera.up);
-	mat4 view = mat4(cx, 0.0, cy, 0.0, cd, 0.0, 0.0, 0.0, 0.0, 1.0);
+void main() {
 	
 	vec2 p = gl_FragCoord.xy;
 	int partID[9];
@@ -80,11 +75,10 @@ void main() {
 	vec3 partCol[9];
 	for (int i = 0; i < 9; i++) {
 		partCol[i] = black;
-		if (partID[i] == PART_SKY)
+		if (partID[i] == PART_SKY || mask[i] == 0)
 			partCol[i] = sky;
-		if (partID[i] == PART_INC) {
-			partCol[i] = mask[i] == 1 ? bowl : sky;
-		}
+		else if (mask[i] == 1)
+			partCol[i] = bowl;
 	}
 	
 	offset = vec2(-0.5);
