@@ -5,6 +5,8 @@
 #include "shader.h"
 #include "shader_inputs.h"
 
+class screen;
+
 class shader_object {
 
 	shader _mainShader;
@@ -21,9 +23,15 @@ public:
 
 	virtual shader_inputs* get_inputs() = 0;
 
-	virtual void mouse_button(int button, int action, int mods);
+	virtual void mouse_button(screen* scr, int button, int action, int mods);
 
-	virtual void key_input(int key, int scancode, int action, int mods);
+	virtual void key_input(screen* scr, int key, int scancode, int action, int mods);
+
+	virtual void scroll_input(screen* scr, double xoffset, double yoffset) = 0;
+
+	virtual void pan_input(screen* scr, double xpos, double ypos) = 0;
+
+	virtual void rotate_input(screen* scr, double xpos, double ypos) = 0;
 
 	virtual bool has_input_shaders() const = 0;
 

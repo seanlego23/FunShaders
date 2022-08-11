@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "mandelbowl.h"
+#include "screen.h"
 
 const unsigned int SCR_WIDTH = 1280;
 const unsigned int SCR_HEIGHT = 720;
@@ -93,6 +94,14 @@ mandelbowl::~mandelbowl() {
 
 shader_inputs* mandelbowl::get_inputs() {
 	return &_inputs;
+}
+
+void mandelbowl::pan_input(screen* scr, double xpos, double ypos) {
+
+}
+
+void mandelbowl::rotate_input(screen* scr, double xpos, double ypos) {
+	
 }
 
 bool mandelbowl::has_input_shaders() const {

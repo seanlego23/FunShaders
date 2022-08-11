@@ -14,6 +14,14 @@ shader_inputs* mandelbrot::get_inputs() {
 	return &_inputs;
 }
 
+void mandelbrot::scroll_input(screen* scr, double xoffset, double yoffset) {
+
+}
+
+void mandelbrot::pan_input(screen* scr, double xpos, double ypos) {
+
+}
+
 bool mandelbrot::has_input_shaders() const {
 	return false;
 }
