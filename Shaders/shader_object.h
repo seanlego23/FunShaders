@@ -25,6 +25,10 @@ public:
 
 	virtual void key_input(int key, int scancode, int action, int mods);
 
+	virtual bool is_2D() const = 0;
+
+	virtual bool is_3D() const = 0;
+
 	virtual bool has_input_shaders() const = 0;
 
 	virtual int input_shaders_count() const = 0;

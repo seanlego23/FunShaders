@@ -35,6 +35,10 @@ public:
 
 	shader_inputs* get_inputs();
 
+	bool is_2D() const override { return false; }
+
+	bool is_3D() const override { return true; }
+
 	bool has_input_shaders() const override;
 
 	int input_shaders_count() const override;
