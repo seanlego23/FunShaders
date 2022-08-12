@@ -6,11 +6,11 @@
 
 shader_object::shader_object(const char *shader_file) : _mainShader(shader_file) { }
 
-void shader_object::mouse_button(screen* scr, int button, int action, int mods) {
+void shader_object::mouse_button(int button, int action, int mods) {
 	//Behavior is implemented by derived class
 }
 
-void shader_object::key_input(screen* scr, int key, int scancode, int action, int mods) {
+void shader_object::key_input(int key, int scancode, int action, int mods) {
 	//Behavior is implemented by derived class
 }
 

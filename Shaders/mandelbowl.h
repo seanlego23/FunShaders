@@ -35,12 +35,6 @@ public:
 
 	shader_inputs* get_inputs();
 
-	void scroll_input(screen* scr, double xoffset, double yoffset) override { }
-
-	void pan_input(screen* scr, double xpos, double ypos) override;
-
-	void rotate_input(screen* scr, double xpos, double ypos) override;
-
 	bool has_input_shaders() const override;
 
 	int input_shaders_count() const override;
