@@ -256,7 +256,7 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
 		glm::vec3 y_dir = curscr->camera.up * s_dir.y;
 		glm::vec3 n_dir = x_dir + y_dir;
 		curscr->camera.loc -= n_dir;
-	} else if (button_mask & ROTATE_BUTTON_MASK) {
+	} else if (button_mask & ROTATE_BUTTON_MASK && curobj->is_3D()) {
 		//Arcball rotation around camera's lookAt point
 		float x_scale = -s_dir.x / res.x * rotate_speed * 2.0f;
 		float y_scale = s_dir.y / res.y * rotate_speed;
